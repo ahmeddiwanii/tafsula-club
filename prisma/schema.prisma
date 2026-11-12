@@ -1,0 +1,1032 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model answer {
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  userId         String
+  questionId     String
+  agreementLevel Int      @default(0)
+  question       question @relation(fields: [questionId], references: [id], map: "Answer_questionId_fkey")
+  user           user     @relation(fields: [userId], references: [id], map: "Answer_userId_fkey")
+
+  @@index([questionId], map: "Answer_questionId_idx")
+  @@index([userId], map: "Answer_userId_idx")
+}
+
+model insight {
+  id        String   @id @default(cuid())
+  text      String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    String
+  user      user     @relation(fields: [userId], references: [id], map: "Insight_userId_fkey")
+
+  @@index([userId], map: "Insight_userId_idx")
+}
+
+model question {
+  id           String        @id
+  questionText String        @db.Text
+  type         question_type @default(AGREEMENT_SCALE)
+  discMapping  String        @db.Text
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime
+  answer       answer[]
+}
+
+model result {
+  id           String              @id @default(cuid())
+  dScore       Float
+  iScore       Float
+  sScore       Float
+  cScore       Float
+  dominantType result_dominantType
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime @updatedAt
+  userId       String
+  user         user                @relation(fields: [userId], references: [id], map: "Result_userId_fkey")
+
+  @@index([userId], map: "Result_userId_idx")
+}
+
+model organization {
+  id          String   @id
+  name        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+  createdById String
+  user        user[]
+  modulesJson Json? // { recruitmentForm?: { isOpen, title, fields[] }, pointsFormula?: {...} }
+  team        team[]
+  project     project[]
+  proposal    proposal[]
+  event       event[]
+  resource    resource[]
+  organizationProfile organizationProfile?
+  posts       organizationPost[]
+  eventStats  userEventStats[]
+  memberCredits memberCredit[] @relation("MemberCredits")
+  memberships organizationMembership[]
+
+  // NEW: Collaboration
+  collaborationCode       organizationCollaborationCode?
+  collaborationRequests   collaborationRequest[] @relation("CollaborationRequester")
+  collaborationTargets    collaborationRequest[] @relation("CollaborationTarget")
+  contacts               contact[]
+  featureAccess          featureAccess[]
+}
+
+model user {
+  id          String    @id
+  name        String
+  email       String    @unique(map: "User_email_key")
+  password    String
+  role        user_role @default(REGULAR_USER)
+  avatarId    Int       @default(0)
+  memberStatus member_status @default(ACCEPTED)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime
+  organizationId   String?
+  invitedById String?
+  answer      answer[]
+  insight     insight[]
+  result      result[]
+  user        user?     @relation("userTouser", fields: [invitedById], references: [id], map: "User_invitedById_fkey")
+  other_user  user[]    @relation("userTouser")
+  organization     organization?  @relation(fields: [organizationId], references: [id], map: "User_organizationId_fkey")
+  profile     profile?
+  certificate certificate[]
+  userSkill   userSkill[]
+  teamMember  teamMember[]
+  task        task[]    @relation("TaskAssignee")
+  taskCreated task[]    @relation("TaskCreator")
+  project     project[] @relation("ProjectCreator")
+  proposal    proposal[] @relation("ProposalSubmitter")
+  proposalReview proposal[] @relation("ProposalReviewer")
+  proposalComment proposalComment[]
+  teamCreated team[]    @relation("TeamCreator")
+  event       event[]   @relation("EventCreator")
+  resource    resource[] @relation("ResourceCreator")
+  posts       organizationPost[]
+  postsApproved organizationPost[] @relation("PostApprovals")
+  memberships organizationMembership[]
+  membershipsInvited organizationMembership[] @relation("MembershipInviter")
+  postComments postComment[]
+  postLikes   postLike[]
+  postViews   postView[]
+  commentReplies commentReply[]
+  notifications notification[]
+  eventRegistrations eventRegistration[] @relation("EventRegistrations")
+  eventAttendances   eventAttendance[] @relation("EventAttendances")
+  eventApprovalsReceived eventApprovalRequest[] @relation("ApprovalsGiven")
+  eventApprovalRequests eventApprovalRequest[] @relation("EventApprovalRequests")
+  manualAttendancesMarked eventAttendance[] @relation("ManualAttendanceMarked")
+  eventStats userEventStats[]
+  eventFeedbacks eventFeedback[]
+  
+  // NEW: Team task relationships
+  teamTasksCreated teamTask[] @relation("TeamTaskCreator")
+  taskAssignments  teamTaskAssignment[] @relation("TaskAssignments")
+  taskApprovalsGiven teamTaskAssignment[] @relation("TaskApprovals")
+  memberCredits    memberCredit[] @relation("MemberCredits")
+
+  // NEW: Director/Manager relationships
+  projectDirectorships projectDirector[] @relation("ProjectDirector")
+  eventDirectorships   eventDirector[] @relation("EventDirector")
+  teamDirectorships    teamDirector[] @relation("TeamDirector")
+
+  // NEW: Contacts & Feature Access
+  contacts             contact[] @relation("ContactAddedBy")
+  featureAccessGrants  featureAccess[] @relation("FeatureAccessUser")
+  featureAccessGiven   featureAccess[] @relation("FeatureAccessGranter")
+
+  teamTaskComments     teamTaskComment[]
+
+  @@index([invitedById], map: "User_invitedById_idx")
+  @@index([organizationId], map: "User_organizationId_idx")
+}
+
+enum question_type {
+  AGREEMENT_SCALE
+  MULTIPLE_CHOICE
+}
+
+enum user_role {
+  SUPERADMIN
+  HR
+  MEMBER
+  REGULAR_USER
+}
+
+enum member_status {
+  TEST_PENDING
+  AWAITING_HR
+  ACCEPTED
+  REJECTED
+}
+
+enum result_dominantType {
+  D
+  I
+  S
+  C
+}
+
+enum taskStatus {
+  PENDING
+  ACTIVE
+  FINALIZED
+}
+
+model profile {
+  userId                  String   @id
+  headline                String?
+  bio                     String?   @db.Text
+  location                String?
+  roleTitle               String?
+  experienceJson          Json?
+  skillsJson              Json?
+  personalitySnapshotJson Json?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+  user                    user     @relation(fields: [userId], references: [id])
+}
+
+model certificate {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  issuer    String?
+  issuedAt  DateTime?
+  fileUrl   String?
+  fileKey   String?
+  skillsJson Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      user     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model skill {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  category  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userSkill userSkill[]
+}
+
+model userSkill {
+  id        String   @id @default(cuid())
+  userId    String
+  skillId   String
+  level     Int?
+  createdAt DateTime @default(now())
+
+  user  user  @relation(fields: [userId], references: [id])
+  skill skill @relation(fields: [skillId], references: [id])
+
+  @@unique([userId, skillId])
+  @@index([skillId])
+}
+
+model team {
+  id           String   @id @default(cuid())
+  organizationId    String
+  name         String
+  purpose      String?
+  description  String?
+  status       String   @default("active")
+  visibility   String   @default("ORG")
+  leadIdsJson  Json?
+  createdById  String
+  eventId      String?  // NEW: Team is assigned to specific event
+  projectId    String?  // NEW: Or assigned to specific project
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  organization   organization @relation(fields: [organizationId], references: [id])
+  createdBy user    @relation("TeamCreator", fields: [createdById], references: [id])
+  event     event?  @relation("TeamEvent", fields: [eventId], references: [id])
+  project   project? @relation("TeamProject", fields: [projectId], references: [id])
+  members   teamMember[]
+  tasks     teamTask[]
+  resources resource[] @relation("TeamResource")
+  directors teamDirector[]
+
+  @@index([organizationId])
+  @@index([createdById])
+  @@index([eventId])
+  @@index([projectId])
+}
+
+model teamMember {
+  id        String   @id @default(cuid())
+  teamId    String
+  userId    String
+  roleInTeam String?
+  
+  // NEW: Acceptance Flow
+  status    String   @default("ACCEPTED") // PENDING, ACCEPTED, REJECTED
+  invitationMessage String? @db.Text
+  
+  createdAt DateTime @default(now())
+
+  team team @relation(fields: [teamId], references: [id])
+  user user @relation(fields: [userId], references: [id])
+
+  @@unique([teamId, userId])
+  @@index([userId])
+}
+
+model project {
+  id            String   @id @default(cuid())
+  organizationId     String
+  title         String
+  description   String?
+  type          String   @default("internal")
+  status        String   @default("idea")
+  visibility    String   @default("ORG")
+  timelineStart DateTime?
+  timelineEnd   DateTime?
+  objectivesJson Json?
+  createdById   String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  organization    organization @relation(fields: [organizationId], references: [id])
+  createdBy  user    @relation("ProjectCreator", fields: [createdById], references: [id])
+  teams      team[] @relation("TeamProject")
+  tasks      task[]
+  resources  resource[] @relation("ProjectResource")
+  events     event[] @relation("ProjectEvent")
+  directors  projectDirector[]
+
+  @@index([organizationId])
+  @@index([createdById])
+}
+
+model task {
+  id          String   @id @default(cuid())
+  projectId   String
+  title       String
+  description String?
+  status      String   @default("todo")
+  taskStatus  taskStatus @default(PENDING)
+  priority    String   @default("medium")
+  dueDate     DateTime?
+  assigneeId  String?
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project  project @relation(fields: [projectId], references: [id])
+  assignee user?   @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  createdBy user   @relation("TaskCreator", fields: [createdById], references: [id])
+
+  @@index([projectId])
+  @@index([assigneeId])
+  @@index([createdById])
+  @@index([taskStatus])
+}
+
+// NEW: Team-specific tasks related to events/projects
+model teamTask {
+  id          String   @id @default(cuid())
+  teamId      String
+  title       String
+  description String?  @db.Text
+  
+  // Task Management
+  status      String   @default("TODO")  // TODO, IN_PROGRESS, REVIEW, COMPLETED
+  taskStatus  taskStatus @default(PENDING)  // PENDING, ACTIVE, FINALIZED
+  priority    String   @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  
+  // Task Assignments, Attachments and Tracking
+  createdById String
+  dueDate     DateTime?
+  
+  hrDocumentName String?
+  hrDocumentUrl  String? @db.Text
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  team      team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  createdBy user   @relation("TeamTaskCreator", fields: [createdById], references: [id])
+  
+  // Task assignments for team members
+  assignments teamTaskAssignment[]
+  comments    teamTaskComment[]
+
+  @@index([taskStatus])
+
+  @@index([teamId])
+  @@index([createdById])
+  @@index([status])
+}
+
+// NEW: Task Discussion Threads
+model teamTaskComment {
+  id        String   @id @default(cuid())
+  taskId    String
+  userId    String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  
+  task teamTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user user     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@index([userId])
+}
+
+// NEW: Individual task assignments for team members
+model teamTaskAssignment {
+  id             String   @id @default(cuid())
+  taskId         String
+  teamMemberId   String
+  userId         String   // Denormalized for quick access
+  
+  // Assignment Status
+  status         String   @default("ASSIGNED")  // ASSIGNED, IN_PROGRESS, SUBMITTED, APPROVED, REJECTED
+  submittedAt    DateTime?
+  
+  // Review & Approval
+  approvedBy     String?  // HR user who approved
+  approvalStatus String   @default("PENDING")  // PENDING, APPROVED, REJECTED
+  
+  // NEW: Member Acceptance & Documents
+  acceptanceStatus String @default("PENDING") // PENDING, ACCEPTED, REJECTED
+  
+  memberDocumentName String?
+  memberDocumentUrl  String? @db.Text
+  
+  approvalComment String?
+  approvedAt     DateTime?
+  
+  // Credits/Score
+  creditsAwarded Float    @default(0)  // Points earned for completion
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  task           teamTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user           user     @relation("TaskAssignments", fields: [userId], references: [id])
+  approver       user?    @relation("TaskApprovals", fields: [approvedBy], references: [id])
+
+  @@unique([taskId, userId])
+  @@index([userId])
+  @@index([taskId])
+  @@index([status])
+  @@index([approvalStatus])
+}
+
+// NEW: Track member credits/scores (visible to HR only)
+model memberCredit {
+  id           String   @id @default(cuid())
+  userId       String
+  organizationId    String
+  
+  // Credit Tracking
+  totalCredits Float    @default(0)  // Total credits earned
+  creditsJson  Json?    // Array of credit transactions with dates and reasons
+  
+  // Performance Metrics
+  tasksCompleted    Int @default(0)
+  tasksApproved     Int @default(0)
+  tasksRejected     Int @default(0)
+  approvalRate      Float @default(0) // percentage of approved tasks
+  
+  // Achievement tracking
+  achievementBadges Json?  // Earned badges/milestones
+  
+  updatedAt    DateTime @updatedAt
+  
+  user    user    @relation("MemberCredits", fields: [userId], references: [id], onDelete: Cascade)
+  organization organization @relation("MemberCredits", fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@index([userId])
+  @@index([organizationId])
+}
+
+model proposal {
+  id             String   @id @default(cuid())
+  organizationId      String
+  type           String
+  title          String
+  status         String   @default("submitted")
+  visibility     String   @default("ORG")
+  submittedById  String
+  reviewerId     String?
+  canvasJson     Json
+  swotJson       Json?
+  timelineStart  DateTime?
+  timelineEnd    DateTime?
+  expectedImpact String?
+  autoProjectId  String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization   organization @relation(fields: [organizationId], references: [id])
+  submittedBy user  @relation("ProposalSubmitter", fields: [submittedById], references: [id])
+  reviewer   user?  @relation("ProposalReviewer", fields: [reviewerId], references: [id])
+  comments   proposalComment[]
+
+  @@index([organizationId])
+  @@index([submittedById])
+  @@index([reviewerId])
+  @@index([status])
+}
+
+model proposalComment {
+  id         String   @id @default(cuid())
+  proposalId String
+  authorId   String
+  body       String   @db.Text
+  createdAt  DateTime @default(now())
+
+  proposal proposal @relation(fields: [proposalId], references: [id])
+  author   user     @relation(fields: [authorId], references: [id])
+
+  @@index([proposalId])
+  @@index([authorId])
+}
+
+model event {
+  id                  String   @id @default(cuid())
+  organizationId           String
+  title               String
+  description         String?  @db.Text
+  
+  // Event Details
+  type                String   @default("GENERAL")  // GENERAL, TRAINING, WORKSHOP, CONFERENCE
+  format              String   @default("IN_PERSON") // IN_PERSON, ONLINE, HYBRID
+  price               Float    @default(0)  // 0 for free
+  currency            String   @default("USD")
+  
+  // Visibility & Access
+  visibility          String   @default("ORG_ONLY") // PUBLIC, ORG_ONLY, MEMBERS_ONLY, PRIVATE
+  isApprovalRequired  Boolean  @default(false)
+  maxParticipants     Int?
+  
+  // Status Tracking
+  status              String   @default("UPCOMING") // UPCOMING, ONGOING, COMPLETED, CANCELLED
+  
+  // Timing
+  startAt             DateTime
+  endAt               DateTime?
+  
+  // Location (for in-person events)
+  location            String?  @db.Text
+  venue               String?  @db.Text
+  
+  // QR Code & Attendance
+  qrCodeUrl           String?  @db.Text
+  qrCodeData          String?  @db.Text
+  
+  // Event Poster
+  posterUrl           String?  @db.Text
+
+  // Post-Event
+  galleryImagesJson   Json?    // Array of image URLs
+  summary             String?  @db.Text
+  
+  // Metadata
+  skillsJson          Json?
+  tags                Json?    // Array of tags
+  category            String?
+  
+  // Relations
+  relatedProjectId    String?
+  createdById         String
+  
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  organization             organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  relatedProject      project? @relation("ProjectEvent", fields: [relatedProjectId], references: [id])
+  createdBy           user    @relation("EventCreator", fields: [createdById], references: [id])
+  
+  teams               team[] @relation("TeamEvent")
+  registrations       eventRegistration[]
+  attendances         eventAttendance[]
+  approvalRequests    eventApprovalRequest[]
+  qrCodes             eventQRCode[]
+  feedbacks           eventFeedback[]
+  directors           eventDirector[]
+
+  @@index([organizationId])
+  @@index([createdById])
+  @@index([status])
+  @@index([visibility])
+}
+
+model resource {
+  id              String   @id @default(cuid())
+  organizationId       String
+  title           String
+  type            String
+  url             String?
+  description     String?
+  tagsJson        Json?
+  linkedProjectId String?
+  linkedTeamId    String?
+  createdById     String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  organization  organization @relation(fields: [organizationId], references: [id])
+  linkedProject project? @relation("ProjectResource", fields: [linkedProjectId], references: [id])
+  linkedTeam   team?    @relation("TeamResource", fields: [linkedTeamId], references: [id])
+  createdBy user @relation("ResourceCreator", fields: [createdById], references: [id])
+
+  @@index([organizationId])
+  @@index([linkedProjectId])
+  @@index([linkedTeamId])
+  @@index([createdById])
+}
+
+model eventRegistration {
+  id              String   @id @default(cuid())
+  eventId         String
+  userId          String
+  
+  // Registration Status
+  status          String   @default("REGISTERED") // REGISTERED, APPROVED, REJECTED, CANCELLED
+  approvedAt      DateTime?
+  
+  // Payment (if applicable)
+  paymentStatus   String   @default("PENDING")    // PENDING, PAID, FAILED, REFUNDED
+  ticketId        String?
+  
+  // NEW: Request Flow
+  preferredTeamId String? // Member requests a specific team
+  
+  appliedAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  event           event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user            user     @relation("EventRegistrations", fields: [userId], references: [id])
+
+  @@unique([eventId, userId])
+  @@index([userId])
+  @@index([status])
+}
+
+model eventAttendance {
+  id              String   @id @default(cuid())
+  eventId         String
+  userId          String
+  
+  // Attendance Status
+  status          String   @default("NOT_ATTENDED") // ATTENDED, NOT_ATTENDED, PARTIAL
+  checkInTime     DateTime?
+  checkOutTime    DateTime?
+  
+  // QR Code Scanning
+  scannedAt       DateTime?
+  qrCodeId        String?
+  scannerUserId   String?  // HR who manually marked attendance
+  pointsAwarded   Float    @default(0)
+
+  // Duration attended (in minutes)
+  durationMinutes Int?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  event           event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user            user     @relation("EventAttendances", fields: [userId], references: [id])
+  scanner         user?    @relation("ManualAttendanceMarked", fields: [scannerUserId], references: [id])
+
+  @@unique([eventId, userId])
+  @@index([userId])
+  @@index([eventId])
+  @@index([status])
+}
+
+model eventApprovalRequest {
+  id              String   @id @default(cuid())
+  eventId         String
+  userId          String
+  
+  status          String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  rejectionReason String?
+  approvedAt      DateTime?
+  approvedBy      String?
+  
+  requestedAt     DateTime @default(now())
+
+  event           event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user            user     @relation("EventApprovalRequests", fields: [userId], references: [id])
+  approver        user?    @relation("ApprovalsGiven", fields: [approvedBy], references: [id])
+
+  @@unique([eventId, userId])
+  @@index([userId])
+  @@index([status])
+}
+
+model eventQRCode {
+   id              String   @id @default(cuid())
+   eventId         String
+   code            String   @unique
+
+   // QR Code Details
+   qrImageUrl      String?  @db.Text
+   qrData          String?  @db.Text
+
+   // Scan Tracking
+   totalScans      Int      @default(0)
+
+   createdAt       DateTime @default(now())
+
+   event           event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+   @@index([eventId])
+}
+
+model eventFeedback {
+   id              String   @id @default(cuid())
+   eventId         String
+   userId          String
+
+   rating          Int?     // 1-5 star rating
+   comment         String?  @db.Text
+   isAnonymous     Boolean  @default(false)
+
+   createdAt       DateTime @default(now())
+   updatedAt       DateTime @updatedAt
+
+   event           event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+   user            user     @relation(fields: [userId], references: [id])
+
+   @@unique([eventId, userId])
+   @@index([eventId])
+   @@index([userId])
+}
+
+model userEventStats {
+  id                  String   @id @default(cuid())
+  userId              String
+  organizationId           String
+  
+  totalEventsJoined   Int      @default(0)
+  totalAttended       Int      @default(0)
+  totalHoursAttended  Float    @default(0)
+  
+  updatedAt           DateTime @updatedAt
+
+  user                user     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization             organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@index([userId])
+}
+
+model organizationProfile {
+  id                String   @id @default(cuid())
+  organizationId         String   @unique
+  profileImageUrl   String?  @db.Text
+  coverImageUrl     String?  @db.Text
+  bio               String?  @db.Text
+  contactEmail      String?
+  contactPhone      String?
+  location          String?
+  website           String?
+  galleryImagesJson Json?
+  isPublic          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  organization organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+}
+
+model organizationPost {
+  id              String   @id @default(cuid())
+  organizationId       String
+  title           String
+  content         String   @db.Text
+  imageUrl        String?
+  authorId        String
+  status          String   @default("pending") // pending, approved, rejected
+  approvalStatus  String   @default("pending") // pending, approved, rejected
+  approvedById    String?  // HR who approved
+  approvalComment String?  @db.Text
+  taggedUserIds   Json?    // Array of user IDs tagged in post
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  organization      organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  author       user              @relation(fields: [authorId], references: [id])
+  approvedBy   user?             @relation("PostApprovals", fields: [approvedById], references: [id])
+  comments     postComment[]
+  likes        postLike[]
+  views        postView[]
+  notifications notification[]
+
+  @@index([organizationId])
+  @@index([authorId])
+  @@index([approvedById])
+}
+
+model postComment {
+  id        String   @id @default(cuid())
+  postId    String
+  authorId  String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  post   organizationPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author user             @relation(fields: [authorId], references: [id])
+  replies commentReply[]
+
+  @@index([postId])
+  @@index([authorId])
+}
+
+model commentReply {
+  id        String   @id @default(cuid())
+  commentId String
+  authorId  String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  comment   postComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  author    user        @relation(fields: [authorId], references: [id])
+
+  @@index([commentId])
+  @@index([authorId])
+}
+
+model organizationJoinRequest {
+  id              String   @id @default(cuid())
+  orgName         String
+  orgType         String?
+  contactName     String
+  contactEmail    String
+  contactPhone    String?
+  description     String   @db.Text
+  websiteUrl      String?
+  status          String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  reviewedAt      DateTime?
+  reviewedBy      String?  // Superadmin User ID
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([status])
+}
+
+/// A person can belong to many clubs. user.organizationId = currently active club.
+model organizationMembership {
+  id             String        @id @default(cuid())
+  userId         String
+  organizationId String
+  role           user_role     @default(MEMBER)
+  status         member_status @default(AWAITING_HR)
+  answersJson    Json? // answers to the club recruitment form
+  inviteToken    String?       @unique
+  invitedById    String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  user         user         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invitedBy    user?        @relation("MembershipInviter", fields: [invitedById], references: [id])
+
+  @@unique([userId, organizationId])
+  @@index([organizationId, status])
+  @@index([userId])
+  @@index([inviteToken])
+}
+
+model postLike {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  post organizationPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user user             @relation(fields: [userId], references: [id])
+
+  @@unique([postId, userId])
+  @@index([postId])
+  @@index([userId])
+}
+
+model postView {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  viewedAt  DateTime @default(now())
+
+  post organizationPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user user             @relation(fields: [userId], references: [id])
+
+  @@unique([postId, userId])
+  @@index([postId])
+  @@index([userId])
+}
+
+model notification {
+  id           String   @id @default(cuid())
+  userId       String
+  postId       String?
+  type         String   // post_tagged, post_approved, post_rejected, comment, like
+  title        String
+  message      String   @db.Text
+  read         Boolean  @default(false)
+  readAt       DateTime?
+  actionUrl    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user     user                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post     organizationPost?   @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([postId])
+  @@index([read])
+}
+
+// NEW: Director/Manager Models for Projects, Events, and Teams
+model projectDirector {
+  id        String   @id @default(cuid())
+  projectId String
+  userId    String
+  role      String   @default("DIRECTOR") // DIRECTOR, CO_DIRECTOR
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project   project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      user    @relation("ProjectDirector", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@index([projectId])
+  @@index([userId])
+}
+
+model eventDirector {
+  id        String   @id @default(cuid())
+  eventId   String
+  userId    String
+  role      String   @default("DIRECTOR") // DIRECTOR, CO_DIRECTOR
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  event     event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user      user   @relation("EventDirector", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([eventId])
+  @@index([userId])
+}
+
+model teamDirector {
+  id        String   @id @default(cuid())
+  teamId    String
+  userId    String
+  role      String   @default("DIRECTOR") // DIRECTOR, CO_DIRECTOR, LEAD
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  team      team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user      user   @relation("TeamDirector", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@index([teamId])
+  @@index([userId])
+}
+
+// NEW: Organization Collaboration Code & Requests
+model organizationCollaborationCode {
+  id        String   @id @default(cuid())
+  organizationId String   @unique
+  code      String   @unique // Unique 8-12 character code (e.g., ORG-ABC123XYZ)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization   organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+}
+
+model collaborationRequest {
+  id                String   @id @default(cuid())
+  requesterOrganizationId String  // The organization sending the request
+  targetOrganizationId   String   // The organization receiving the request (identified by their code)
+  
+  status            String   @default("PENDING") // PENDING, ACCEPTED, REJECTED, CANCELLED
+  message           String?  @db.Text
+  
+  respondedAt       DateTime?
+  responseMessage   String?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  requesterOrganization  organization  @relation("CollaborationRequester", fields: [requesterOrganizationId], references: [id], onDelete: Cascade)
+  targetOrganization     organization  @relation("CollaborationTarget", fields: [targetOrganizationId], references: [id], onDelete: Cascade)
+
+  @@unique([requesterOrganizationId, targetOrganizationId])
+  @@index([requesterOrganizationId])
+  @@index([targetOrganizationId])
+  @@index([status])
+}
+
+// Contact Management for networking
+model contact {
+  id           String   @id @default(cuid())
+  organizationId    String
+  name         String
+  email        String?
+  phone        String?
+  organization String?
+  role         String?
+  description  String?  @db.Text
+  howMet       String?
+  tags         Json?
+  addedById    String
+  isGeneral    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  parentOrganization  organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  addedBy  user    @relation("ContactAddedBy", fields: [addedById], references: [id])
+
+  @@index([organizationId])
+  @@index([addedById])
+}
+
+// Feature access delegation
+model featureAccess {
+  id         String   @id @default(cuid())
+  userId     String
+  organizationId  String
+  feature    String   // EVENTS, TASKS, TEAMS, PROPOSALS
+  grantedById String
+  createdAt  DateTime @default(now())
+
+  user      user    @relation("FeatureAccessUser", fields: [userId], references: [id], onDelete: Cascade)
+  organization   organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  grantedBy user    @relation("FeatureAccessGranter", fields: [grantedById], references: [id])
+
+  @@unique([userId, organizationId, feature])
+  @@index([userId])
+  @@index([organizationId])
+}
