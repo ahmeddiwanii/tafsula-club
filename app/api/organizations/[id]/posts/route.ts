@@ -1,6 +1,5 @@
+import { getAuthSession } from "@/lib/request-auth"
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth/next"
-import { authOptions } from "../../../../../lib/auth"
 import { prisma } from "../../../../../lib/db"
 import type { NextRequest } from "next/server"
 
@@ -29,7 +28,7 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
 
 export async function POST(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   const params = await context.params
-  const session = await getServerSession(authOptions)
+  const session = await getAuthSession()
 
   if (!session || !session.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 })

@@ -1,6 +1,5 @@
+import { getAuthSession } from "@/lib/request-auth"
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { dispatchNotification } from "@/lib/notifications"
 import type { NextRequest } from "next/server"
@@ -10,7 +9,7 @@ import type { NextRequest } from "next/server"
  */
 export async function PATCH(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getAuthSession()
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }

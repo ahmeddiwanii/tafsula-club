@@ -59,6 +59,10 @@ Optional: SMTP for invites, `GROQ_API_KEY` or `OPENAI_API_KEY` for Story Studio 
 | `npm run seed:test` | Demo club and role accounts |
 | `npm run seed:demo-rich` | Larger demo dataset |
 
+## Mobile app
+
+A native Expo app lives in `/mobile` (Android APK + iOS via EAS). It uses the same API and database as this website. See `mobile/README.md` for auth, APK distribution, and Apple’s paid-program limits.
+
 ## License
 
 MIT

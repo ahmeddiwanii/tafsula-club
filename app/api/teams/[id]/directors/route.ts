@@ -1,10 +1,9 @@
+import { getAuthSession } from "@/lib/request-auth"
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth/next"
-import { authOptions } from "../../../../../lib/auth"
 import { prisma } from "../../../../../lib/db"
 
 export async function POST(req: Request, context: { params: Promise<{ id: string }> }) {
-  const session = await getServerSession(authOptions)
+  const session = await getAuthSession()
   if (!session || (session.user.role !== "SUPERADMIN" && session.user.role !== "HR")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
   }
@@ -41,7 +40,7 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
 }
 
 export async function DELETE(req: Request, context: { params: Promise<{ id: string }> }) {
-  const session = await getServerSession(authOptions)
+  const session = await getAuthSession()
   if (!session || (session.user.role !== "SUPERADMIN" && session.user.role !== "HR")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
   }

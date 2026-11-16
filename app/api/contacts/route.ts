@@ -1,12 +1,11 @@
+import { getAuthSession } from "@/lib/request-auth"
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 
 // GET - Fetch contacts for current user's organization
 export async function GET(req: NextRequest) {
     try {
-        const session = await getServerSession(authOptions)
+        const session = await getAuthSession()
         if (!session?.user?.id || !session?.user?.organizationId) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
         }
@@ -53,7 +52,7 @@ export async function GET(req: NextRequest) {
 // POST - Create a new contact
 export async function POST(req: NextRequest) {
     try {
-        const session = await getServerSession(authOptions)
+        const session = await getAuthSession()
         if (!session?.user?.id || !session?.user?.organizationId) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
         }
@@ -98,7 +97,7 @@ export async function POST(req: NextRequest) {
 // PATCH - Update a contact
 export async function PATCH(req: NextRequest) {
     try {
-        const session = await getServerSession(authOptions)
+        const session = await getAuthSession()
         if (!session?.user?.id || !session?.user?.organizationId) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
         }
@@ -143,7 +142,7 @@ export async function PATCH(req: NextRequest) {
 // DELETE - Delete a contact
 export async function DELETE(req: NextRequest) {
     try {
-        const session = await getServerSession(authOptions)
+        const session = await getAuthSession()
         if (!session?.user?.id || !session?.user?.organizationId) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
         }

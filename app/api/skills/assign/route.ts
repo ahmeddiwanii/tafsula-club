@@ -1,7 +1,6 @@
+import { getAuthSession } from "@/lib/request-auth"
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth/next"
 
-import { authOptions } from "../../../../lib/auth"
 import { prisma } from "../../../../lib/db"
 
 function canEdit(session: any, userId: string, targetOrganizationId: string | null) {
@@ -13,7 +12,7 @@ function canEdit(session: any, userId: string, targetOrganizationId: string | nu
 }
 
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions)
+  const session = await getAuthSession()
   const { userId, skillId, level } = await req.json()
 
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { organizationId: true } })

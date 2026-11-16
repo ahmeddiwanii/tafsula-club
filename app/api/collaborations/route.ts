@@ -1,12 +1,12 @@
+import { getAuthSession } from "@/lib/request-auth"
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
-import { getServerSession } from "next-auth"
 import crypto from "crypto"
 
 // Get organization collaboration info
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession()
+    const session = await getAuthSession()
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
 // Send collaboration request
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession()
+    const session = await getAuthSession()
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
 // Handle collaboration request (accept/reject)
 export async function PATCH(request: NextRequest) {
   try {
-    const session = await getServerSession()
+    const session = await getAuthSession()
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }

@@ -36,3 +36,9 @@ venv
 Thumbs.db
 *.tsbuildinfo
 next-env.d.ts
+
+# expo
+mobile/.expo
+mobile/dist
+mobile/.env
+mobile/.env.local

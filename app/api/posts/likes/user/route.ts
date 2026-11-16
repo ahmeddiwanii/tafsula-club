@@ -1,10 +1,9 @@
-import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/lib/auth"
+import { getAuthSession } from "@/lib/request-auth"
 import { prisma } from "@/lib/db"
 import { NextResponse } from "next/server"
 
 export async function GET(req: Request) {
-  const session = await getServerSession(authOptions)
+  const session = await getAuthSession()
 
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })

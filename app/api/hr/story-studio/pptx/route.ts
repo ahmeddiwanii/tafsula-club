@@ -1,6 +1,5 @@
+import { getAuthSession } from "@/lib/request-auth"
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/lib/auth"
 import { getHRSessionUser } from "@/lib/hr-session-user"
 import { UserRole } from "@/types/user"
 import { buildStoryPptx } from "@/lib/story-studio/pptx"
@@ -10,7 +9,7 @@ export const maxDuration = 60
 export const runtime = "nodejs"
 
 export async function POST(req: Request) {
-  const user = getHRSessionUser(await getServerSession(authOptions))
+  const user = getHRSessionUser(await getAuthSession())
   if (!user || user.role !== UserRole.HR || !user.organizationId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
   }

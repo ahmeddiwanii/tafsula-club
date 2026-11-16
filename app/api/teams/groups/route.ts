@@ -1,11 +1,10 @@
-import { getServerSession } from "next-auth/next"
-import { authOptions } from "../../../../lib/auth"
+import { getAuthSession } from "@/lib/request-auth"
 import { prisma } from "../../../../lib/db"
 import { UserRole } from "../../../../types/user"
 import { NextResponse } from "next/server"
 
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions)
+  const session = await getAuthSession()
 
   if (!session || session.user.role !== UserRole.HR) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })

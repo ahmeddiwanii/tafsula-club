@@ -1,6 +1,5 @@
+import { getAuthSession } from "@/lib/request-auth"
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { dispatchNotification } from "@/lib/notifications"
 import type { NextRequest } from "next/server"
@@ -13,7 +12,7 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getAuthSession()
     const { id: eventId } = await params
 
     if (!session?.user?.id) {

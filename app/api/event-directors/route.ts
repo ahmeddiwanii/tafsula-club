@@ -1,11 +1,11 @@
+import { getAuthSession } from "@/lib/request-auth"
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
-import { getServerSession } from "next-auth"
 
 // Get all organization members (for director selection)
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession()
+    const session = await getAuthSession()
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
 // Add directors to an event
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession()
+    const session = await getAuthSession()
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }

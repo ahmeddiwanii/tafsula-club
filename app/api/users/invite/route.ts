@@ -1,5 +1,5 @@
+import { getAuthSession } from "@/lib/request-auth"
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth/next"
 import crypto from "crypto"
 import { hash } from "bcryptjs"
 
@@ -10,7 +10,7 @@ import { setMemberStatus } from "../../../../lib/member-status-db"
 
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getAuthSession()
     if (!session || (session.user.role !== UserRole.SUPERADMIN && session.user.role !== UserRole.HR)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }

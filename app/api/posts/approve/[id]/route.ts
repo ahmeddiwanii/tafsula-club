@@ -1,6 +1,5 @@
+import { getAuthSession } from "@/lib/request-auth"
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { UserRole } from '@/types/user';
 
@@ -8,7 +7,7 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const session = await getServerSession(authOptions);
+  const session = await getAuthSession();
 
   if (!session || !session.user || session.user.role !== UserRole.HR) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

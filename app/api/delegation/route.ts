@@ -1,12 +1,11 @@
+import { getAuthSession } from "@/lib/request-auth"
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 
 // GET - Get delegated features for current user or a specific user
 export async function GET(req: NextRequest) {
     try {
-        const session = await getServerSession(authOptions)
+        const session = await getAuthSession()
         if (!session?.user?.id || !session?.user?.organizationId) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
         }
@@ -34,7 +33,7 @@ export async function GET(req: NextRequest) {
 // POST - Grant feature access
 export async function POST(req: NextRequest) {
     try {
-        const session = await getServerSession(authOptions)
+        const session = await getAuthSession()
         if (!session?.user?.id || !session?.user?.organizationId) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
         }
@@ -77,7 +76,7 @@ export async function POST(req: NextRequest) {
 // DELETE - Revoke feature access
 export async function DELETE(req: NextRequest) {
     try {
-        const session = await getServerSession(authOptions)
+        const session = await getAuthSession()
         if (!session?.user?.id || !session?.user?.organizationId) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
         }

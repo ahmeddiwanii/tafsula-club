@@ -1,14 +1,13 @@
+import { getAuthSession } from "@/lib/request-auth"
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
-import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/lib/auth"
 import bcrypt from "bcryptjs"
 import { sendInviteEmail } from "@/lib/email"
 import { v4 as uuidv4 } from "uuid"
 
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getAuthSession()
     if (!session || session.user.role !== "SUPERADMIN") {
       return new NextResponse("Unauthorized", { status: 401 })
     }

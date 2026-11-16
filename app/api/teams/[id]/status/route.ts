@@ -1,11 +1,11 @@
+import { getAuthSession } from "@/lib/request-auth"
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth/next"
 import { authOptions, UserRole } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 
 export async function PATCH(req: Request, context: { params: Promise<{ id: string }> }) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getAuthSession()
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
 
     const { id: teamId } = await context.params

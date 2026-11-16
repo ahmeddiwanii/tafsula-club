@@ -1,6 +1,5 @@
+import { getAuthSession } from "@/lib/request-auth"
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth/next"
-import { authOptions } from "../../../lib/auth"
 import { prisma } from "../../../lib/db"
 import type { NextRequest } from "next/server"
 import QRCode from "qrcode"
@@ -17,7 +16,7 @@ export async function GET(req: NextRequest) {
     const page = parseInt(searchParams.get("page") || "1")
     const skip = (page - 1) * limit
 
-    const session = await getServerSession(authOptions)
+    const session = await getAuthSession()
     const where: any = {}
 
     if (organizationId) where.organizationId = organizationId
@@ -104,7 +103,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions)
+  const session = await getAuthSession()
 
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 })

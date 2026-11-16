@@ -1,5 +1,5 @@
+import { getAuthSession } from "@/lib/request-auth"
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth/next"
 import { authOptions, UserRole } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { resolveRecruitmentForm, type RecruitmentForm } from "@/lib/membership"
@@ -14,7 +14,7 @@ export async function GET(_req: Request, context: { params: Promise<{ id: string
   if (!org) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
   const form = resolveRecruitmentForm(org.modulesJson)
-  const session = await getServerSession(authOptions)
+  const session = await getAuthSession()
   const isHr =
     session?.user?.role === UserRole.HR && session.user.organizationId === id
 
@@ -38,7 +38,7 @@ export async function GET(_req: Request, context: { params: Promise<{ id: string
 }
 
 export async function PUT(req: Request, context: { params: Promise<{ id: string }> }) {
-  const session = await getServerSession(authOptions)
+  const session = await getAuthSession()
   const { id } = await context.params
 
   if (

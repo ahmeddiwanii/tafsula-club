@@ -1,14 +1,13 @@
+import { getAuthSession } from "@/lib/request-auth"
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth/next"
 import { hash } from "bcryptjs"
 import crypto from "crypto"
-import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 
 /** Soft-deactivate: scramble password and anonymize email so login stops working. */
 export async function POST() {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getAuthSession()
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }

@@ -1,13 +1,12 @@
+import { getAuthSession } from "@/lib/request-auth"
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 
 // POST - Register for an event
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: eventId } = await params
-    const session = await getServerSession(authOptions)
+    const session = await getAuthSession()
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Please login to register" }, { status: 401 })
@@ -82,7 +81,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: eventId } = await params
-    const session = await getServerSession(authOptions)
+    const session = await getAuthSession()
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -111,7 +110,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: eventId } = await params
-    const session = await getServerSession(authOptions)
+    const session = await getAuthSession()
 
     if (!session?.user?.id) {
       return NextResponse.json({ registered: false })

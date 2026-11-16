@@ -1,7 +1,6 @@
+import { getAuthSession } from "@/lib/request-auth"
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth/next"
 
-import { authOptions } from "../../../../../../lib/auth"
 import { prisma } from "../../../../../../lib/db"
 
 function canEdit(session: any, userId: string, targetOrganizationId: string | null) {
@@ -15,7 +14,7 @@ function canEdit(session: any, userId: string, targetOrganizationId: string | nu
 export async function DELETE(_: Request, context: { params: Promise<{ userId: string; certId: string }> }) {
   const params = await context.params
   const { userId, certId } = params
-  const session = await getServerSession(authOptions)
+  const session = await getAuthSession()
 
   const certificate = await prisma.certificate.findUnique({
     where: { id: certId },

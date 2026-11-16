@@ -1,5 +1,4 @@
-import { getServerSession } from "next-auth/next"
-import { authOptions } from "../../../lib/auth"
+import { getAuthSession } from "@/lib/request-auth"
 import { prisma } from "../../../lib/db"
 import { UserRole } from "../../../types/user"
 import { NextResponse, NextRequest } from "next/server"
@@ -11,7 +10,7 @@ export async function GET(request: NextRequest) {
     const offset = parseInt(searchParams.get('offset') || '0');
     const approved = searchParams.get('approved') === 'true';
     
-    const session = await getServerSession(authOptions);
+    const session = await getAuthSession();
     
     let where: any = {};
     if (approved) {
@@ -45,7 +44,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions)
+  const session = await getAuthSession()
 
   if (!session || session.user.role !== UserRole.HR) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })

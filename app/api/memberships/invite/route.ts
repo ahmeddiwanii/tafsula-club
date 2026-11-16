@@ -1,5 +1,5 @@
+import { getAuthSession } from "@/lib/request-auth"
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth/next"
 import { randomBytes } from "crypto"
 import { authOptions, UserRole } from "@/lib/auth"
 import { prisma } from "@/lib/db"
@@ -7,7 +7,7 @@ import { getAppUrl } from "@/lib/app-url"
 
 /** HR creates a shareable invite link. Recipient still needs club approval. */
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions)
+  const session = await getAuthSession()
   if (!session || (session.user.role !== UserRole.HR && session.user.role !== UserRole.SUPERADMIN)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
   }

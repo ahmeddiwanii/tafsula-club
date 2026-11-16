@@ -1,7 +1,6 @@
+import { getAuthSession } from "@/lib/request-auth"
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth/next"
 
-import { authOptions } from "../../../../../lib/auth"
 import { prisma } from "../../../../../lib/db"
 
 function canEdit(session: any, userId: string, targetOrganizationId: string | null) {
@@ -15,7 +14,7 @@ function canEdit(session: any, userId: string, targetOrganizationId: string | nu
 export async function POST(req: Request, context: { params: Promise<{ userId: string }> }) {
   const params = await context.params
   const { userId } = params
-  const session = await getServerSession(authOptions)
+  const session = await getAuthSession()
 
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { organizationId: true } })
   if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 })

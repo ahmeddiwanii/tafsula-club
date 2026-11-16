@@ -1,13 +1,12 @@
+import { getAuthSession } from "@/lib/request-auth"
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { resolveRecruitmentForm, upsertJoinRequest } from "@/lib/membership"
 import { dispatchNotification } from "@/lib/notifications"
 
 export async function POST(req: Request, context: { params: Promise<{ id: string }> }) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getAuthSession()
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Please sign in to join", loginRequired: true }, { status: 401 })
     }

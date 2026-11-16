@@ -1,6 +1,5 @@
+import { getAuthSession } from "@/lib/request-auth"
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/lib/auth"
 import { getHRSessionUser } from "@/lib/hr-session-user"
 import { UserRole } from "@/types/user"
 import { gatherOrgActivity } from "@/lib/story-studio/gather"
@@ -19,7 +18,7 @@ function parseBound(value: unknown, fallback: Date) {
 }
 
 export async function POST(req: Request) {
-  const user = getHRSessionUser(await getServerSession(authOptions))
+  const user = getHRSessionUser(await getAuthSession())
   if (!user || user.role !== UserRole.HR || !user.organizationId) {
     return NextResponse.json({ error: "Only the bureau of this club can generate presentations." }, { status: 403 })
   }
